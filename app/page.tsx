@@ -1,29 +1,18 @@
 import Editor from "@/components/editor";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { send } from "@/app/actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export default async function Home() {
-  // const supabase = createClient();
-  // const { data, error } = await supabase.auth.getUser();
-  // if (error || !data?.user) {
-  //   redirect("/login");
-  // }
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/api/auth/signin");
+  }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-3">
-      <div className="w-full">
-        <h1 className="text-left text-2xl font-semibold">Symbol mail</h1>
-      </div>
+    <main className="flex min-h-screen flex-col items-center">
       <Editor />
-      {/* つぎここから。JS を使う要素はここではつかえない */}
-      <button
-        onClick={async () => {
-          await send();
-        }}
-      >
-        test
-      </button>
     </main>
   );
 }
