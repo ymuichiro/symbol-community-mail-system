@@ -22,7 +22,7 @@ export default function Editor() {
       await fetch("/api/send", {
         method: "POST",
         credentials: "same-origin",
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ value, subject }),
       });
 
       alert("送信しました");
@@ -48,7 +48,7 @@ export default function Editor() {
   };
 
   return (
-    <div className="flex flex-col space-y-3 w-screen p-3">
+    <div className="flex flex-col space-y-3 w-full">
       <Input placeholder="メール件名" value={subject} onChange={(e) => setSubject(e.currentTarget.value)} />
       <div className="w-full">
         <MDEditor
@@ -77,7 +77,7 @@ export default function Editor() {
           }}
         />
       </div>
-      <div className="flex flex-row justify-end space-x-3 space-y-3 sm:space-y-0">
+      <div className="flex flex-col justify-end space-y-3 sm:flex-row space-x-0 sm:space-x-3 sm:space-y-0">
         <Button variant="outline" className="min-w-40" onClick={handlePreview}>
           プレビュー
         </Button>

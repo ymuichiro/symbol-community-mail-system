@@ -1,8 +1,9 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth_options";
 import { markdownToHtml } from "@/lib/markdown";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import markdownToTxt from "markdown-to-text";
 import nodemailer from "nodemailer";
 
 type Params = {
@@ -40,24 +41,23 @@ export async function POST(req: NextRequest) {
 
   // markdown to html
   const html = markdownToHtml(json.subject, json.value);
-  console.log(html);
 
   const mailOptions = {
     from: "noreply@mail.symbol-community.com",
     bcc: emails,
-    subject: "テストメール",
-    text: "これはテストメールです。",
-    html: "<p>これは <b>テスト</b> メールです。</p>",
+    subject: json.subject,
+    text: markdownToTxt(json.value),
+    html: html,
   };
 
   // メールを送信する
-  // transporter.sendMail(mailOptions, (error, info) => {
-  //   if (error) {
-  //     console.error("メールの送信中にエラーが発生しました:", error);
-  //   } else {
-  //     console.log("メールが正常に送信されました:", info.response);
-  //   }
-  // });
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("メールの送信中にエラーが発生しました:", error);
+    } else {
+      console.log("メールが正常に送信されました:", info.response);
+    }
+  });
 
   return NextResponse.json({ message: "hello from login action" });
 }
