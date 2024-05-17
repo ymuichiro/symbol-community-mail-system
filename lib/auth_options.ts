@@ -1,13 +1,25 @@
 import { NextAuthOptions } from "next-auth";
-import CogniteProvider from "next-auth/providers/cognito";
+import AzureADProvider from "next-auth/providers/azure-ad";
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    CogniteProvider({
-      issuer: process.env.COGNITO_ISSUER_URL || "",
-      clientId: process.env.COGNITO_CLIENT_ID || "",
-      clientSecret: process.env.COGNITO_CLIENT_SECRET || "",
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID || "",
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
+      tenantId: process.env.AZURE_AD_TENANT_ID || "",
     }),
   ],
+  callbacks: {
+    async jwt({ token, account }) {
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      (session as any).accessToken = token.accessToken;
+      return session;
+    },
+  },
   secret: process.env.SECRET || "secret",
 };

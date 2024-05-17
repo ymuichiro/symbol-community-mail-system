@@ -1,10 +1,11 @@
 import { authOptions } from "@/lib/auth_options";
 import { markdownToHtml } from "@/lib/markdown";
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import markdownToTxt from "markdown-to-text";
 import nodemailer from "nodemailer";
+import { getMailFromCosmos } from "@/lib/cosmos-db";
+import { getGroupsFromEntraId } from "@/lib/entra-id";
 
 type Params = {
   subject: string;
@@ -28,6 +29,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
+  const currentGroupIds: string[] | Error = await getGroupsFromEntraId(session.accessToken);
+
+  if (currentGroupIds instanceof Error) {
+    return NextResponse.json({ message: "Failed to get user groups" }, { status: 403 });
+  }
+
+  if (!currentGroupIds.includes(process.env.AZURE_AD_GROUP_ID || "--------")) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+  }
+
   const json = (await req.json()) as Params;
 
   if (!json.value || !json.subject) {
@@ -35,16 +46,24 @@ export async function POST(req: NextRequest) {
   }
 
   // メーリングリストのデータを取得
-  const records = await prisma.mailingList.findMany();
-  const emails = await Promise.all(records.map<string>((record) => record.email));
-  console.log(`admin: ${session.user?.email}, value: ${json.value}, emails: ${emails.length}`);
+  const result = await getMailFromCosmos();
+
+  if (result instanceof Error) {
+    return NextResponse.json({ message: "Error" }, { status: 500 });
+  }
+
+  if (result.length === 0) {
+    return NextResponse.json({ message: "No email address" }, { status: 400 });
+  }
+
+  console.log(`admin: ${session.user?.email}, value: ${json.value}, emails: ${result.length}`);
 
   // markdown to html
   const html = markdownToHtml(json.subject, json.value);
 
   const mailOptions = {
     from: "noreply@mail.symbol-community.com",
-    bcc: emails,
+    bcc: result,
     subject: json.subject,
     text: markdownToTxt(json.value),
     html: html,

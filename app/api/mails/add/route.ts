@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { setMailToCosmos } from "@/lib/cosmos-db";
 
 type Params = {
   email: string;
@@ -20,16 +20,15 @@ export async function POST(req: NextRequest) {
   }
 
   // 書き込み
-  await prisma.mailingList.upsert({
-    create: { email: json.email },
-    update: { email: json.email },
-    where: { email: json.email },
-  });
+  const result = await setMailToCosmos(json.email);
 
-  return NextResponse.json({ message: "Register email successfully" });
-}
-
-export async function GET() {
-  const emails = await prisma.mailingList.findMany();
-  return NextResponse.json(emails);
+  const message = "Register email successfully";
+  if (result instanceof Error) {
+    // 登録済みメールアドレスを攻撃者が認知できないように、成功時と同じメッセージを返す
+    console.warn("ADD ACTION FAILER", result.name, result.message);
+    return NextResponse.json({ message });
+  } else {
+    console.log("ADD ACTION SUCCESSFULLY", json.email);
+    return NextResponse.json({ message });
+  }
 }
