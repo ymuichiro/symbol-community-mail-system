@@ -1,10 +1,12 @@
 import { CosmosClient, ErrorResponse, Item } from "@azure/cosmos";
 
-const client = new CosmosClient({
-  endpoint: process.env.COSMOS_ENDPOINT,
-  key: process.env.COSMOS_KEY,
-  userAgentSuffix: "CosmosDBJavascriptQuickstart",
-});
+function creataClient(): CosmosClient {
+  return new CosmosClient({
+    endpoint: process.env.COSMOS_ENDPOINT,
+    key: process.env.COSMOS_KEY,
+    userAgentSuffix: "CosmosDBJavascriptQuickstart",
+  });
+}
 
 export class AlreadyExistsError extends Error {
   constructor(message: string) {
@@ -31,6 +33,7 @@ export interface MailTable {
  */
 export async function setMailToCosmos(mailAddress: string): Promise<Item | Error | AlreadyExistsError> {
   try {
+    const client = creataClient();
     const { item } = await client
       .database(process.env.COSMOS_DATABASE)
       .container(process.env.COSMOS_CONTAINER)
@@ -56,6 +59,7 @@ export async function setMailToCosmos(mailAddress: string): Promise<Item | Error
  */
 export async function getMailFromCosmos(): Promise<string[] | Error> {
   try {
+    const client = creataClient();
     const { resources } = await client
       .database(process.env.COSMOS_DATABASE)
       .container(process.env.COSMOS_CONTAINER)
@@ -74,6 +78,7 @@ export async function getMailFromCosmos(): Promise<string[] | Error> {
  */
 export async function deleteMailFromCosmos(address: string): Promise<MailTable[] | Error | NotFoundError> {
   try {
+    const client = creataClient();
     const container = client.database(process.env.COSMOS_DATABASE).container(process.env.COSMOS_CONTAINER);
 
     // クエリを実行して一致するレコードを取得
